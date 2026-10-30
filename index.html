@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WK리그 취향표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 사람마다 한 블록. 블록 안에서 가로줄=8개 구단, 왼쪽=그 사람 사진과 이름. 칸을 누르면 선수·사진을 바꾸는 시트가 열린다. */
+:root {
+  --bg: #f1f5f3;
+  --surface: #ffffff;
+  --ink: #12222b;
+  --muted: #5d6d75;
+  --line: #cfd9d5;
+  --accent: #2f6fe0;
+  --accent-ink: #ffffff;
+  --chip: #e6eeea;
+  --ph: #f3f5f4;
+  --scrim: rgba(10, 20, 24, .55);
+  --font-display: "Black Han Sans", "Noto Sans KR", sans-serif;
+  --font-body: "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1a1a; --surface: #152626; --ink: #e8f1ee; --muted: #93a8a2; --line: #2b4140;
+    --accent: #6c9cff; --accent-ink: #0a1630; --chip: #1f3534; --ph: #1b2f2f; --scrim: rgba(0, 0, 0, .65);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1a1a; --surface: #152626; --ink: #e8f1ee; --muted: #93a8a2; --line: #2b4140;
+  --accent: #6c9cff; --accent-ink: #0a1630; --chip: #1f3534; --ph: #1b2f2f; --scrim: rgba(0, 0, 0, .65);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.45;
+  padding-block: 24px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.top input.title {
+  font-family: var(--font-display); font-size: clamp(28px, 6vw, 44px); border: 0; border-bottom: 2px dashed var(--line);
+  background: transparent; color: var(--accent); padding: 2px 0; width: min(100%, 520px);
+}
+.top input.date { font: inherit; font-size: 15px; border: 0; border-bottom: 2px dashed var(--line); background: transparent; color: var(--ink); padding: 4px 0; width: 150px; }
+.top .help { color: var(--muted); font-size: 13.5px; margin: 6px 0 0; }
+input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.grid { display: grid; grid-template-columns: 132px repeat(8, minmax(108px, 1fr)); min-width: 1000px; }
+.left { grid-row: 1 / span 2; border-right: 1px dashed var(--line); padding: 12px; display: grid; gap: 8px; align-content: start; }
+.photo {
+  appearance: none; border: 1px solid var(--line); border-radius: 6px; padding: 0; width: 100%; aspect-ratio: 1; cursor: pointer; overflow: hidden;
+  background: var(--ph); color: var(--muted); font: inherit; font-size: 12px; display: grid; place-items: center; position: relative;
+}
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo span { position: absolute; inset: auto 0 0 0; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 2px 0; text-align: center; }
+.left input { font: inherit; font-size: 14px; font-weight: 700; width: 100%; border: 0; border-bottom: 1px dashed var(--line); background: transparent; color: var(--ink); padding: 4px 0; text-align: center; }
+.left .del { appearance: none; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; padding: 2px; text-decoration: underline; }
+.club { padding: 8px 6px 4px; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: .02em; border-bottom: 3px solid var(--c); border-left: 1px dashed var(--line); }
+.cell {
+  appearance: none; border: 0; border-left: 1px dashed var(--line); background: none; color: inherit; font: inherit; cursor: pointer;
+  padding: 8px 8px 10px; display: grid; gap: 6px; align-content: start; text-align: center; min-width: 0;
+}
+.cell:hover { background: var(--chip); }
+.box { aspect-ratio: 1; background: var(--ph); border-radius: 4px; overflow: hidden; display: grid; place-items: center; width: 100%; }
+.box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.box .empty { font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); color: var(--muted); opacity: .45; }
+.box .empty.on { opacity: 1; color: var(--ink); }
+.box .num { font-family: var(--font-display); font-size: clamp(30px, 4vw, 42px); color: var(--c); }
+.pname { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; line-height: 1.25; }
+.pname.none { color: var(--muted); font-weight: 400; }
+.ptag { font-size: 11px; color: var(--muted); min-height: 15px; font-variant-numeric: tabular-nums; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+button.btn { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; min-height: 40px; }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.result { display: none; gap: 10px; }
+.result.on { display: grid; }
+.result img { width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; display: block; }
+.result p, .note { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.note { border-top: 1px solid var(--line); padding-top: 14px; }
+
+/* 선택 시트 */
+.scrim { position: fixed; inset: 0; background: var(--scrim); display: none; z-index: 50; align-items: flex-end; justify-content: center; }
+.scrim.on { display: flex; }
+.sheet {
+  background: var(--surface); color: var(--ink); width: min(100%, 640px); max-height: 88vh; overflow-y: auto; border-radius: 14px 14px 0 0;
+  padding: 18px max(16px, env(safe-area-inset-left, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px;
+}
+@media (min-width: 700px) { .scrim { align-items: center; } .sheet { border-radius: 14px; } }
+.sheet h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; }
+.sheet .sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.sheet input[type="text"], .sheet input[type="search"] { font: inherit; font-size: 15px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; min-width: 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.group { display: grid; gap: 8px; }
+.group h3 { margin: 0; font-size: 12px; letter-spacing: .08em; color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+.group h3 b { color: var(--ink); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: inherit; font-size: 15px; padding: 6px 12px 6px 8px; border-radius: 8px; cursor: pointer; display: inline-flex; gap: 8px; min-height: 40px; align-items: center; }
+.chip .n { font-size: 12px; font-weight: 700; min-width: 24px; text-align: center; padding: 2px 4px; border-radius: 4px; background: var(--surface); color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip small { font-size: 11px; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: #fff; font-weight: 700; }
+.chip[aria-pressed="true"] .n { background: rgba(255,255,255,.22); color: #fff; }
+.chip[aria-pressed="true"] small { color: rgba(255,255,255,.9); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <input class="title" id="title" type="text" maxlength="24" aria-label="제목" value="WK리그 취향표">
+      <p class="help">칸을 누르면 선수와 사진을 바꿀 수 있어요. 왼쪽 사진을 누르면 내 사진을 바꿔요.</p>
+    </div>
+    <input class="date" id="date" type="text" maxlength="14" aria-label="날짜" placeholder="2026 10 30">
+  </div>
+
+  <div id="blocks" style="display:grid;gap:16px"></div>
+
+  <div class="actions">
+    <button class="btn" id="addRow" type="button">사람 추가</button>
+    <button class="btn primary" id="makeImg" type="button">이미지로 만들기</button>
+    <button class="btn" id="reset" type="button">전체 초기화</button>
+  </div>
+  <div class="result" id="result">
+    <img id="resultImg" alt="완성된 WK리그 취향표 이미지">
+    <p>이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요.</p>
+  </div>
+
+  <p class="note">명단과 포지션, 등번호는 2026 WK리그 가이드북 기준이에요. 여름 이적(노진영 문경→경주, 고다영 경주→강진)은 현재 소속으로 옮겼고, 고다영은 새 번호를 확인하지 못했어요. 선수 사진은 직접 올린 사진만 쓰고, 이 기기의 브라우저에만 저장돼요.</p>
+</div>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet" id="sheet"></div>
+</div>
+<input type="file" id="file" accept="image/*" hidden>
+
+<script>
+const CLUBS = [
+  { id: "incheon", name: "인천현대제철", full: "인천현대제철 레드엔젤스", c: "#d1242f", pos: {
+    GK: [[1,"조어진"],[13,"성서울서라벌"],[33,"김민정","c"]],
+    DF: [[4,"맹다희"],[5,"고유진"],[6,"정유진"],[15,"문하연"],[19,"윤혜인"],[20,"임희은"],[21,"홍채빈"],[22,"김은솔"],[23,"안송희"]],
+    MF: [[7,"박혜정"],[8,"김수진"],[14,"김민서"],[16,"김명진"],[27,"남궁예지"],[46,"배예빈"]],
+    FW: [[9,"강지우"],[10,"장유빈"],[11,"박아현"],[17,"조미진"],[18,"박믿음"],[29,"워츠","f"],[30,"천가람"],[32,"토리","f"]] } },
+  { id: "suwon", name: "수원FC위민", full: "수원FC위민", c: "#14407a", pos: {
+    GK: [[1,"박현진"],[16,"김경희"],[33,"정윤정"]],
+    DF: [[5,"이수인"],[6,"이유진"],[17,"한다인"],[20,"김혜리"],[22,"서진주"],[23,"권희선"],[25,"서예진"]],
+    MF: [[7,"권은솜"],[8,"아야카","f"],[10,"지소연","c"],[11,"최유리"],[18,"전민지"],[27,"이진주"]],
+    FW: [[9,"밀레니냐","f"],[13,"송지윤"],[14,"김가연"],[19,"이정민"],[26,"윤수정"],[39,"하루히","f"]] } },
+  { id: "seoul", name: "서울시청", full: "서울시청 아마조네스", c: "#0a82c2", pos: {
+    GK: [[18,"김정미"],[21,"우서빈"]],
+    DF: [[2,"빈현진"],[12,"백도혜"],[13,"김영은"],[17,"이예은"],[19,"강예진"],[20,"신보미"],[22,"정현경"],[23,"최정윤"],[26,"임선주"],[27,"이채윤"]],
+    MF: [[3,"이유정"],[8,"박예은"],[14,"김민지"],[15,"강유미"],[16,"조예송"]],
+    FW: [[7,"한채린"],[9,"강태경","c"],[10,"서현민"],[11,"최지나"]] } },
+  { id: "hwacheon", name: "화천KSPO", full: "화천KSPO", c: "#0a4f9e", pos: {
+    GK: [[1,"민유경"],[18,"홍유진"],[21,"김민영"]],
+    DF: [[2,"정지연","c"],[6,"조예진"],[7,"윤지현"],[8,"곽민영"],[13,"서민아"],[19,"김현아"],[20,"이민화"],[22,"최민아"],[26,"김유리"],[27,"연예진"],[30,"김지현"]],
+    MF: [[4,"타나카 아스나","f"],[11,"위재은"],[14,"신수민"],[15,"목승연"],[17,"최정민"],[24,"기타카타 사에","f"],[25,"고은빈"],[94,"이수빈"]],
+    FW: [[10,"최유정"],[16,"문은주"],[23,"천세화"],[28,"이수빈"],[29,"백진주"]] } },
+  { id: "gyeongju", name: "경주한수원", full: "경주한수원 WFC", c: "#0b6b52", pos: {
+    GK: [[1,"조의정"],[18,"김도현"],[24,"전하늘"]],
+    DF: [[2,"김진희"],[5,"손다슬"],[6,"양다민"],[12,"곽민정"],[19,"구채현"],[20,"김혜영"],[22,"정영아"],[23,"홍혜지"],[28,"엄민경"]],
+    MF: [[7,"김혜지"],[8,"김윤지"],[14,"전은하"],[15,"오서연"],[16,"장슬기","c"],[17,"이영주"],[21,"노진영","t"],[33,"강은영"],[35,"나카지마 에미","f"]],
+    FW: [[9,"쿄카와","f"],[10,"김상은"],[11,"현슬기"],[26,"정유진"],[27,"문미라"],[30,"박유정"],[99,"레베카 발데즈","f"]] } },
+  { id: "sejong", name: "세종스포츠토토", full: "세종스포츠토토", c: "#a67c00", pos: {
+    GK: [[1,"김소희"],[18,"류지수"],[33,"김유미"]],
+    DF: [[4,"김도연","c"],[5,"신담영"],[6,"김미연"],[14,"김윤주"],[20,"김혜인"],[22,"이정연"],[23,"조민아"],[24,"윤선영"],[27,"서아리"],[30,"김윤주"]],
+    MF: [[7,"지선미"],[8,"고민정"],[16,"김지현"],[17,"오연희"],[19,"노하늘"]],
+    FW: [[3,"김지윤"],[9,"박희영"],[10,"이하림"],[11,"신혜빈"],[13,"윤민지"],[21,"장진영"],[29,"이정인"]] } },
+  { id: "sangmu", name: "문경상무", full: "문경상무 (상무여자축구단)", c: "#4a4f55", pos: {
+    GK: [[18,"조아라"],[23,"하지희"],[29,"이하경"]],
+    DF: [[4,"서인경"],[6,"김지원"],[7,"송다희"],[17,"박현아"],[20,"전민주"],[24,"변혜진"],[28,"김륭경"]],
+    MF: [[8,"권하늘","c"],[12,"박예나"],[13,"김혜정"],[14,"이아름"],[15,"정은진"],[25,"손윤희"],[27,"이세란"]],
+    FW: [[9,"양서영"],[10,"권다은"],[16,"윤채현"],[19,"김태양"],[22,"이선빈"]] } },
+  { id: "gangjin", name: "강진스완스", full: "강진 스완스 WFC", c: "#2b3589", pos: {
+    GK: [[1,"김예린"],[18,"강지연"],[21,"도윤지"],[31,"김수린"]],
+    DF: [[3,"정설아"],[4,"구가람"],[6,"노혜연"],[7,"이시호"],[12,"이예솔"],[13,"김규연"],[15,"이효경","c"],[16,"고다애"],[17,"이덕주"],[26,"홍성연"]],
+    MF: [[8,"김은주"],[10,"이소희"],[11,"손화연"],[19,"김성미"],[20,"최은형"],[22,"양은서"],[24,"송재은"],[25,"윤유리"],[null,"고다영","t"]],
+    FW: [[9,"이영서"],[14,"곽로영"],[23,"황아현"],[27,"박가현"]] } }
+];
+const POS = ["GK", "DF", "MF", "FW"];
+const POS_NAME = { GK: "골키퍼", DF: "수비수", MF: "미드필더", FW: "공격수" };
+const LS_KEY = "wk-grid-v1";
+const MAX_ROWS = 12;
+const ROW_COLORS = ["#b9dedb", "#ffbbe2", "#faf6e4", "#d9e4ff", "#ffe1c4", "#e2d6f5"];
+
+const newRow = (name) => ({ name: name || "", photo: "", cells: {} });
+let state = { title: "WK리그 취향표", date: "", rows: [newRow("나"), newRow("친구1"), newRow("친구2"), newRow("친구3")] };
+try { const s = JSON.parse(localStorage.getItem(LS_KEY) || "null"); if (s && Array.isArray(s.rows)) state = s; } catch (e) {}
+let saveTimer = 0;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }, 200);
+}
+
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "text") n.textContent = attrs[k];
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), attrs[k]);
+    else n.setAttribute(k, attrs[k]);
+  }
+  kids.forEach((x) => x && n.append(x));
+  return n;
+}
+const club = (id) => CLUBS.find((c) => c.id === id);
+const keyOf = (num, name) => (num == null ? "x" : num) + "-" + name;
+const tagOf = (p) => p ? [p.pos, p.num != null ? p.num + "번" : ""].filter(Boolean).join(" · ") : "";
+
+/* 사진 올리기: 작게 줄여서 저장 */
+function shrink(file, max) {
+  return new Promise((resolve) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        resolve(cv.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => resolve("");
+      img.src = fr.result;
+    };
+    fr.onerror = () => resolve("");
+    fr.readAsDataURL(file);
+  });
+}
+let fileTarget = null;
+function pickFile(cb) { fileTarget = cb; $("file").value = ""; $("file").click(); }
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f || !fileTarget) return;
+  const url = await shrink(f, 400);
+  if (url) fileTarget(url);
+});
+
+/* 화면 */
+function renderBlocks() {
+  $("blocks").replaceChildren(...state.rows.map((row, ri) => {
+    const ph = ROW_COLORS[ri % ROW_COLORS.length];
+    const photoBtn = el("button", { class: "photo", type: "button", "aria-label": (row.name || "사람") + " 사진 바꾸기", style: row.photo ? "" : "background:" + ph + ";color:#4a5a60",
+      onclick: () => pickFile((url) => { row.photo = url; save(); renderBlocks(); }) },
+      row.photo ? el("img", { src: row.photo, alt: "" }) : el("b", { text: "사진" }),
+      el("span", { text: "변경" }));
+    const nameIn = el("input", { type: "text", maxlength: "10", value: row.name, placeholder: "이름", "aria-label": "이름" });
+    nameIn.addEventListener("input", () => { row.name = nameIn.value; save(); });
+    const left = el("div", { class: "left" }, photoBtn, nameIn,
+      state.rows.length > 1 ? el("button", { class: "del", type: "button", text: "삭제", onclick: () => { state.rows.splice(ri, 1); save(); renderBlocks(); } }) : null);
+    const heads = CLUBS.map((c) => el("div", { class: "club", style: "--c:" + c.c, text: c.name }));
+    const cells = CLUBS.map((c) => {
+      const cell = row.cells[c.id];
+      const box = el("div", { class: "box", style: "--c:" + c.c },
+        cell && cell.img ? el("img", { src: cell.img, alt: cell.name || "" }) :
+        cell && cell.num != null ? el("span", { class: "num", text: String(cell.num) }) : el("span", { class: "empty" + (cell && cell.none ? " on" : ""), text: "텅" }));
+      return el("button", { class: "cell", type: "button", "aria-label": c.name + " 선수 고르기", onclick: () => openSheet(ri, c.id) },
+        box,
+        el("span", { class: "pname" + (cell && cell.name ? "" : " none"), text: cell && cell.name ? cell.name : (cell && cell.none ? "선택 안 함" : "선수 선택") }),
+        el("span", { class: "ptag", text: cell ? tagOf(cell) : "" }));
+    });
+    return el("div", { class: "block" }, el("div", { class: "grid" }, left, ...heads, ...cells));
+  }));
+  $("addRow").disabled = state.rows.length >= MAX_ROWS;
+}
+
+/* 선택 시트 */
+let sheet = { ri: 0, clubId: "", q: "" };
+function openSheet(ri, clubId) { sheet = { ri, clubId, q: "" }; $("scrim").classList.add("on"); renderSheet(); }
+function closeSheet() { $("scrim").classList.remove("on"); renderBlocks(); }
+$("scrim").addEventListener("click", (e) => { if (e.target === $("scrim")) closeSheet(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("scrim").classList.contains("on")) closeSheet(); });
+
+function setPick(p) {
+  const row = state.rows[sheet.ri];
+  const cur = row.cells[sheet.clubId] || {};
+  if (cur.key === p.key) {
+    if (cur.img) row.cells[sheet.clubId] = { img: cur.img };
+    else delete row.cells[sheet.clubId];
+  }
+  else row.cells[sheet.clubId] = Object.assign({}, p, cur.img ? { img: cur.img } : {});
+  save();
+}
+
+function renderSheet() {
+  const c = club(sheet.clubId), row = state.rows[sheet.ri];
+  const cur = row.cells[sheet.clubId] || {};
+  const q = sheet.q.trim();
+  const match = (num, name) => !q || name.includes(q) || (num != null && String(num) === q);
+  const groups = POS.map((k) => {
+    const list = c.pos[k].filter((r) => match(r[0], r[1]));
+    if (!list.length) return null;
+    return el("div", { class: "group" },
+      el("h3", null, el("b", { text: k }), el("span", { text: POS_NAME[k] })),
+      el("div", { class: "chips" }, ...list.map(([num, name, opt]) => {
+        const key = keyOf(num, name);
+        return el("button", { class: "chip", type: "button", style: "--c:" + c.c, "aria-pressed": String(cur.key === key),
+          onclick: () => { setPick({ key, name, pos: k, num }); closeSheet(); } },
+          num != null ? el("span", { class: "n", text: String(num) }) : null,
+          el("span", { text: name }),
+          opt === "c" ? el("small", { text: "주장" }) : null,
+          opt === "f" ? el("small", { text: "외국인" }) : null,
+          opt === "t" ? el("small", { text: "이적" }) : null);
+      })));
+  }).filter(Boolean);
+
+  const search = el("input", { type: "search", placeholder: "이름이나 번호로 찾기", "aria-label": "선수 검색", value: sheet.q });
+  search.addEventListener("input", () => { sheet.q = search.value; renderSheet(); const s = $("sheet").querySelector('input[type="search"]'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } });
+  const custom = el("input", { type: "text", maxlength: "12", placeholder: "명단에 없는 선수 직접 입력", "aria-label": "직접 입력" });
+  const addCustom = () => { const v = custom.value.trim(); if (!v) return; setPick({ key: "c-" + v, name: v, pos: "", num: null }); closeSheet(); };
+  custom.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); addCustom(); } });
+
+  $("sheet").replaceChildren(
+    el("div", null, el("h2", { id: "sheetTitle", text: c.full }), el("p", { class: "sub", text: (row.name || "이름 없음") + "의 선수를 골라주세요" })),
+    el("div", { class: "row" },
+      el("button", { class: "btn", type: "button", text: cur.img ? "사진 바꾸기" : "사진 올리기", onclick: () => pickFile((url) => { const r = state.rows[sheet.ri]; r.cells[sheet.clubId] = Object.assign(r.cells[sheet.clubId] || {}, { img: url }); save(); renderSheet(); }) }),
+      cur.img ? el("button", { class: "btn", type: "button", text: "사진 지우기", onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId]; delete x.img; if (!x.key) delete r.cells[sheet.clubId]; save(); renderSheet(); } }) : null,
+      el("button", { class: "btn", type: "button", "aria-pressed": String(!!cur.none), text: cur.none ? "선택 안 함 ✓" + " (텅)" : "선택 안 함 (텅)",
+        onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId] || {}; r.cells[sheet.clubId] = x.none ? (x.img ? { img: x.img } : undefined) : Object.assign({ key: "none", none: true, name: "" }, x.img ? { img: x.img } : {}); if (!r.cells[sheet.clubId]) delete r.cells[sheet.clubId]; save(); closeSheet(); } }),
+      cur.key && !cur.none ? el("button", { class: "btn", type: "button", text: "선택 해제", onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId]; r.cells[sheet.clubId] = x && x.img ? { img: x.img } : undefined; if (!x.img) delete r.cells[sheet.clubId]; save(); closeSheet(); } }) : null,
+      el("button", { class: "btn", type: "button", text: "닫기", onclick: closeSheet })),
+    search,
+    ...(groups.length ? groups : [el("p", { class: "sub", text: "찾는 선수가 없어요. 아래에서 직접 입력하세요." })]),
+    el("div", { class: "row" }, custom, el("button", { class: "btn", type: "button", text: "추가", onclick: addCustom }))
+  );
+}
+
+/* 제목·날짜·버튼 */
+$("title").value = state.title || "";
+$("date").value = state.date || "";
+$("title").addEventListener("input", (e) => { state.title = e.target.value; save(); });
+$("date").addEventListener("input", (e) => { state.date = e.target.value; save(); });
+$("addRow").addEventListener("click", () => { if (state.rows.length < MAX_ROWS) { state.rows.push(newRow("")); save(); renderBlocks(); } });
+$("reset").addEventListener("click", () => {
+  state = { title: "WK리그 취향표", date: "", rows: [newRow("나"), newRow("친구1"), newRow("친구2"), newRow("친구3")] };
+  $("title").value = state.title; $("date").value = ""; $("result").classList.remove("on"); save(); renderBlocks();
+});
+
+/* 이미지 만들기 */
+const loadImg = (src) => new Promise((r) => { if (!src) return r(null); const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+function drawCover(ctx, img, x, y, w, h) {
+  const s = Math.max(w / img.width, h / img.height), sw = w / s, sh = h / s;
+  ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
+}
+function fitText(ctx, t, maxW, size, weight, face) {
+  let s = size; ctx.font = weight + " " + s + "px " + face;
+  while (ctx.measureText(t).width > maxW && s > 10) { s -= 1; ctx.font = weight + " " + s + "px " + face; }
+}
+async function makeImage() {
+  try { await Promise.all([document.fonts.load('40px "Black Han Sans"', "가나다"), document.fonts.load('700 20px "Noto Sans KR"', "가나다")]); } catch (e) {}
+  const DISP = '"Black Han Sans","Noto Sans KR",sans-serif', BODY = '"Noto Sans KR",sans-serif';
+  const pad = 48, leftW = 190, cw = 150, labelH = 38, imgH = 140, infoH = 62, blockGap = 26;
+  const blockH = labelH + imgH + infoH + 24;
+  const W = pad * 2 + leftW + cw * CLUBS.length, headH = 130;
+  const H = headH + state.rows.length * (blockH + blockGap) + 10;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#f1f5f3"; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#a9c3f5"; ctx.fillRect(0, 0, W, 10); ctx.fillRect(0, H - 10, W, 10);
+  ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+  ctx.fillStyle = "#2f6fe0"; fitText(ctx, state.title || "WK리그 취향표", W - pad * 2 - 260, 60, "400", DISP);
+  ctx.fillText(state.title || "WK리그 취향표", pad, 92);
+  if (state.date) { ctx.fillStyle = "#5d6d75"; ctx.font = "italic 500 30px " + BODY; ctx.textAlign = "right"; ctx.fillText(state.date, W - pad, 90); ctx.textAlign = "left"; }
+  for (let ri = 0; ri < state.rows.length; ri++) {
+    const row = state.rows[ri], y0 = headH + ri * (blockH + blockGap);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(pad, y0, W - pad * 2, blockH);
+    ctx.strokeStyle = "#b9c4c0"; ctx.lineWidth = 2; ctx.strokeRect(pad, y0, W - pad * 2, blockH);
+    // 왼쪽 사진
+    const ps = 130, px = pad + (leftW - ps) / 2, py = y0 + 26;
+    const pimg = await loadImg(row.photo);
+    if (pimg) drawCover(ctx, pimg, px, py, ps, ps);
+    else { ctx.fillStyle = ROW_COLORS[ri % ROW_COLORS.length]; ctx.fillRect(px, py, ps, ps); }
+    ctx.fillStyle = "#12222b"; ctx.textAlign = "center"; fitText(ctx, row.name || "", leftW - 24, 26, "700", BODY);
+    ctx.fillText(row.name || "", pad + leftW / 2, py + ps + 40); ctx.textAlign = "left";
+    for (let ci = 0; ci < CLUBS.length; ci++) {
+      const c = CLUBS[ci], cell = row.cells[c.id] || {}, x = pad + leftW + ci * cw;
+      ctx.strokeStyle = "#c9d3cf"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + blockH); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = c.c; ctx.fillRect(x + 8, y0 + labelH - 4, cw - 16, 4);
+      ctx.fillStyle = "#12222b"; ctx.textAlign = "center"; fitText(ctx, c.name, cw - 16, 21, "700", BODY);
+      ctx.fillText(c.name, x + cw / 2, y0 + labelH - 12);
+      const bx = x + 12, by = y0 + labelH + 8, bs = cw - 24;
+      ctx.fillStyle = "#f3f5f4"; ctx.fillRect(bx, by, bs, imgH - 8);
+      const im = await loadImg(cell.img);
+      if (im) drawCover(ctx, im, bx, by, bs, imgH - 8);
+      else {
+        ctx.fillStyle = cell.num != null ? c.c : (cell.none ? "#12222b" : "rgba(93,109,117,.45)");
+        ctx.font = "56px " + DISP; ctx.fillText(cell.num != null ? String(cell.num) : "텅", x + cw / 2, by + (imgH - 8) / 2 + 20);
+      }
+      ctx.fillStyle = cell.name ? "#12222b" : "#8a979d";
+      const lbl = cell.name || (cell.none ? "선택 안 함" : "-");
+      fitText(ctx, lbl, cw - 14, 24, "700", BODY);
+      ctx.fillText(lbl, x + cw / 2, y0 + labelH + imgH + 28);
+      const t = tagOf(cell);
+      if (t) { ctx.fillStyle = "#5d6d75"; ctx.font = "500 18px " + BODY; ctx.fillText(t, x + cw / 2, y0 + labelH + imgH + 54); }
+      ctx.textAlign = "left";
+    }
+  }
+  $("resultImg").src = cv.toDataURL("image/png");
+  $("result").classList.add("on");
+  $("result").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+$("makeImg").addEventListener("click", makeImage);
+
+renderBlocks();
+</script>
+
+</body>
+</html>

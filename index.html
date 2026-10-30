@@ -178,7 +178,7 @@ const CLUBS = [
     FW: [[3,"김지윤"],[9,"박희영"],[10,"이하림"],[11,"신혜빈"],[13,"윤민지"],[21,"장진영"],[29,"이정인"]] } },
   { id: "sangmu", name: "문경상무", full: "문경상무 (상무여자축구단)", c: "#4a4f55", pos: {
     GK: [[18,"조아라"],[23,"하지희"],[29,"이하경"]],
-    DF: [[4,"서인경"],[6,"김지원"],[7,"송다희"],[17,"박현아"],[20,"전민주"],[24,"변혜진"],[28,"김륭경"]],
+    DF: [[4,"서인경"],[6,"김지원"],[7,"송다희"],[17,"박현아"],[20,"전민주"],[24,"변혜진"],[28,"김륜경"]],
     MF: [[8,"권하늘","c"],[12,"박예나"],[13,"김혜정"],[14,"이아름"],[15,"정은진"],[25,"손윤희"],[27,"이세란"]],
     FW: [[9,"양서영"],[10,"권다은"],[16,"윤채현"],[19,"김태양"],[22,"이선빈"]] } },
   { id: "gangjin", name: "강진스완스", full: "강진 스완스 WFC", c: "#2b3589", pos: {
@@ -249,6 +249,7 @@ $("file").addEventListener("change", async (e) => {
 
 /* 화면 */
 function renderBlocks() {
+  const lefts = [...document.querySelectorAll(".block")].map((b) => b.scrollLeft);
   $("blocks").replaceChildren(...state.rows.map((row, ri) => {
     const ph = ROW_COLORS[ri % ROW_COLORS.length];
     const photoBtn = el("button", { class: "photo", type: "button", "aria-label": (row.name || "사람") + " 사진 바꾸기", style: row.photo ? "" : "background:" + ph + ";color:#4a5a60",
@@ -272,6 +273,7 @@ function renderBlocks() {
     });
     return el("div", { class: "block" }, el("div", { class: "grid" }, left, ...heads, ...cells));
   }));
+  document.querySelectorAll(".block").forEach((b, i) => { if (lefts[i]) b.scrollLeft = lefts[i]; });
   $("addRow").disabled = state.rows.length >= MAX_ROWS;
 }
 
@@ -279,6 +281,17 @@ function renderBlocks() {
 let sheet = { ri: 0, clubId: "", q: "" };
 function openSheet(ri, clubId) { sheet = { ri, clubId, q: "" }; $("scrim").classList.add("on"); renderSheet(); }
 function closeSheet() { $("scrim").classList.remove("on"); renderBlocks(); }
+/* 같은 사람의 다음 구단 칸으로 넘어간다. 마지막 구단이면 시트를 닫는다. */
+function advance() {
+  const i = CLUBS.findIndex((c) => c.id === sheet.clubId);
+  if (i < 0 || i >= CLUBS.length - 1) { closeSheet(); return; }
+  sheet.clubId = CLUBS[i + 1].id; sheet.q = "";
+  renderBlocks();
+  const cell = document.querySelectorAll(".block")[sheet.ri].querySelectorAll(".cell")[i + 1];
+  if (cell) cell.scrollIntoView({ inline: "center", block: "nearest" });
+  renderSheet();
+  $("sheet").scrollTop = 0;
+}
 $("scrim").addEventListener("click", (e) => { if (e.target === $("scrim")) closeSheet(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("scrim").classList.contains("on")) closeSheet(); });
 
@@ -306,7 +319,7 @@ function renderSheet() {
       el("div", { class: "chips" }, ...list.map(([num, name, opt]) => {
         const key = keyOf(num, name);
         return el("button", { class: "chip", type: "button", style: "--c:" + c.c, "aria-pressed": String(cur.key === key),
-          onclick: () => { setPick({ key, name, pos: k, num }); closeSheet(); } },
+          onclick: () => { setPick({ key, name, pos: k, num }); advance(); } },
           num != null ? el("span", { class: "n", text: String(num) }) : null,
           el("span", { text: name }),
           opt === "c" ? el("small", { text: "주장" }) : null,
@@ -318,7 +331,7 @@ function renderSheet() {
   const search = el("input", { type: "search", placeholder: "이름이나 번호로 찾기", "aria-label": "선수 검색", value: sheet.q });
   search.addEventListener("input", () => { sheet.q = search.value; renderSheet(); const s = $("sheet").querySelector('input[type="search"]'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } });
   const custom = el("input", { type: "text", maxlength: "12", placeholder: "명단에 없는 선수 직접 입력", "aria-label": "직접 입력" });
-  const addCustom = () => { const v = custom.value.trim(); if (!v) return; setPick({ key: "c-" + v, name: v, pos: "", num: null }); closeSheet(); };
+  const addCustom = () => { const v = custom.value.trim(); if (!v) return; setPick({ key: "c-" + v, name: v, pos: "", num: null }); advance(); };
   custom.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); addCustom(); } });
 
   $("sheet").replaceChildren(
@@ -327,7 +340,8 @@ function renderSheet() {
       el("button", { class: "btn", type: "button", text: cur.img ? "사진 바꾸기" : "사진 올리기", onclick: () => pickFile((url) => { const r = state.rows[sheet.ri]; r.cells[sheet.clubId] = Object.assign(r.cells[sheet.clubId] || {}, { img: url }); save(); renderSheet(); }) }),
       cur.img ? el("button", { class: "btn", type: "button", text: "사진 지우기", onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId]; delete x.img; if (!x.key) delete r.cells[sheet.clubId]; save(); renderSheet(); } }) : null,
       el("button", { class: "btn", type: "button", "aria-pressed": String(!!cur.none), text: cur.none ? "선택 안 함 ✓" + " (텅)" : "선택 안 함 (텅)",
-        onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId] || {}; r.cells[sheet.clubId] = x.none ? (x.img ? { img: x.img } : undefined) : Object.assign({ key: "none", none: true, name: "" }, x.img ? { img: x.img } : {}); if (!r.cells[sheet.clubId]) delete r.cells[sheet.clubId]; save(); closeSheet(); } }),
+        onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId] || {}; r.cells[sheet.clubId] = x.none ? (x.img ? { img: x.img } : undefined) : Object.assign({ key: "none", none: true, name: "" }, x.img ? { img: x.img } : {}); if (!r.cells[sheet.clubId]) delete r.cells[sheet.clubId]; save(); advance(); } }),
+      sheet.clubId !== CLUBS[CLUBS.length - 1].id ? el("button", { class: "btn", type: "button", text: "다음 팀 →", onclick: advance }) : null,
       cur.key && !cur.none ? el("button", { class: "btn", type: "button", text: "선택 해제", onclick: () => { const r = state.rows[sheet.ri]; const x = r.cells[sheet.clubId]; r.cells[sheet.clubId] = x && x.img ? { img: x.img } : undefined; if (!x.img) delete r.cells[sheet.clubId]; save(); closeSheet(); } }) : null,
       el("button", { class: "btn", type: "button", text: "닫기", onclick: closeSheet })),
     search,
